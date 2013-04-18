@@ -3,9 +3,9 @@
     <div class="hidden-phone">
         <div style="float: left">
             <div style="margin-bottom: 10px;">
-                <input type="text" ng-model="searchTerm" class="search-query" placeholder="Search">
+                <input type="text" data-bind="value:searchTerm" class="search-query" placeholder="Search">
 
-                <p class="btn btn-primary" ng-click="doSearch(searchString)">Go</p>
+                <p class="btn btn-primary" data-bind="click:doSearch">Go</p>
             </div>
         </div>
 
@@ -27,7 +27,7 @@
             </thead>
             <tbody data-bind="foreach: contacts">
 
-            <tr>
+            <tr data-bind="click:$parent.doView">
                 <td data-bind="text:Id"></td>
                 <td><a data-bind="attr: {href:viewUri}, text:FullName"></a></td>
                 <td data-bind="text:Company"></td>
@@ -39,23 +39,26 @@
         </table>
     </div>
 
-    <!--&lt;!&ndash; This div is only displayed in mobile phones (see above for desktops) &ndash;&gt;-->
-    <!--<div class="visible-phone">-->
-    <!--<form class="form-inline">-->
-    <!--<input type="text" ng-model="searchTerm" class="input-medium search-query" placeholder="Search">-->
-    <!--<button ng-click="doSearch(searchString)" class="btn btn-primary">Go</button>-->
-    <!--<button ng-click="doCreate()" class="btn btn-default">&nbsp;+&nbsp;</button>-->
-    <!--</form>-->
+    <!-- This div is only displayed in mobile phones (see above for desktops) -->
+    <div class="visible-phone">
+        <form class="form-inline">
+            <input type="text" ng-model="searchTerm" class="input-medium search-query" placeholder="Search">
+            <button data-bind="click:doSearch" class="btn btn-primary">Go</button>
+            <a href="#/new" class="btn btn-primary">&nbsp;+&nbsp;</a>
+        </form>
 
-    <!--<table class="table">-->
-    <!--<tr ng-click="doView(contact.Id)" ng-repeat="contact in contacts">-->
-    <!--<td> {{contact.FirstName}} {{contact.LastName}}-->
-    <!--<br/>-->
-    <!--<small><i>{{contact.Account.Name}}</i></small>-->
-    <!--</td>-->
-    <!--<td><i class="icon-chevron-right"></i></td>-->
-    <!--</tr>-->
-    <!--</table>-->
-    <!--</div>-->
+        <table class="table">
+            <tbody data-bind="foreach: contacts">
+            <tr data-bind="click:$parent.doView">
+                <td>
+                    <span data-bind="text:FullName"></span>
+                    <br/>
+                    <small><i data-bind="text:Company"></i></small>
+                </td>
+                <td><i class="icon-chevron-right"></i></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 
 </div>

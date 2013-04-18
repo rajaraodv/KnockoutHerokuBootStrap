@@ -230,6 +230,7 @@ function ContactDetailViewModel(data) {
     };
 
     self.cancel = function () {
+        debugger;
         if (self.contact().Id) {
             location.hash = '/view/' + self.contact().Id;
         } else {
@@ -278,8 +279,13 @@ function ContactListViewModel() {
     this.working = false;
 
     Contact.query(function (data) {
+        self.formatAndSetContacts(data.records);
+
+    }, errCB);
+
+    self.formatAndSetContacts = function(dataArry) {
         //Note: Create custom fields for display (there are other ways, but this is simplest)
-        var records = ko.utils.arrayMap(data.records, function (record) {
+        var records = ko.utils.arrayMap(dataArry, function (record) {
             record.FullName = (record.FirstName ? record.FirstName + ' ' : ' ') + (record.LastName ? record.LastName : '');
             record.Company = record.Account && record.Account.Name ? record.Account.Name : '';
             record.viewUri = '#/view/' + record.Id;
@@ -287,34 +293,26 @@ function ContactListViewModel() {
         });
         //Note: Don't use self.contacts= data.records coz self.contacts is an observableArray
         self.contacts.push.apply(self.contacts, records);
-
-//        debugger;
-//        for(var i = 0; i < )
-//
-//       // self.contacts = data.records;
-//        self.contacts.push(data.records[0]);
-//
-//        self.contacts.push(data.records[1]);
-    }, function (data) {
-        alert('Query Error');
-    });
+    };
 
     this.isWorking = function () {
         return $scope.working;
     };
 
     this.doSearch = function () {
-        Contact.search($scope.searchTerm, function (data) {
-            debugger;
-            $scope.contacts = data;
-            $scope.$apply();//Required coz sfdc uses jquery.ajax
-        }, function (data) {
-        });
+        Contact.search(this.searchTerm, function (records) {
+            if(records.length > 0) {
+                self.contacts.removeAll();//remove original items
+                self.formatAndSetContacts(records);
+            } else {
+                alert("Item Not Found");
+            }
+
+        }, errCB);
     };
 
-    this.doView = function (contactId) {
-        console.log('doView');
-        $location.path('/view/' + contactId);
+    this.doView = function (contactObj) {
+        location.hash = '/view/' + contactObj.Id;
     };
 
     this.doCreate = function () {
