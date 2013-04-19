@@ -290,7 +290,6 @@ function KnockoutForceObjectFactory(params, sfConfig) {
     };
 
     KnockoutForceObject.remove = function (obj, successCB, failureCB) {
-        debugger;
         return SFConfig.client.del(type, obj.Id, successCB, failureCB);
     };
 
