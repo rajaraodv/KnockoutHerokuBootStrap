@@ -31,14 +31,9 @@ function sammyRoutes(koApp) {
 
 
         this.get('/callback:cbInfo', function () {
-            if (!koApp.knockoutForce.authenticated()) {
-                location.hash = '/login';
-                // this.app.runRoute('get', '/login'); //redirect to login
-            } else {
-                koApp.knockoutForce.oauthCallback(document.location.href);
-                location.hash = '/contacts';
-                //this.app.runRoute('get', '/contacts');
-            }
+            koApp.knockoutForce.oauthCallback(document.location.href);
+            location.hash = '/contacts';
+            //this.app.runRoute('get', '/contacts');
         });
 
         this.get('/contacts', function () {
@@ -92,8 +87,6 @@ function sammyRoutes(koApp) {
         });
     });
 }
-
-
 
 
 /**

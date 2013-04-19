@@ -132,7 +132,8 @@ function KnockoutForce(SFConfig) {
                     + '/services/data/'
                     + forcetkClient.apiVersion;
 
-                callback();
+                //If callback is passed, call it
+                callback && callback();
             },
             function forceOAuthUI_errorHandler() {
                 alert('oauth failed');
