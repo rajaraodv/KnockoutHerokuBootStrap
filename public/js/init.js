@@ -18,14 +18,12 @@ function sammyRoutes(koApp) {
                 this.app.runRoute('get', '/login'); //redirect to login
             } else {
                 this.render('/partials/home.html').replace('#mainContainer');
-
                 koApp.setViewModelByRoute("/");
             }
         });
 
         this.get('/login', function () {
             this.render('/partials/login.html').replace('#mainContainer');
-
             koApp.setViewModelByRoute("/login");
         });
 
@@ -33,13 +31,11 @@ function sammyRoutes(koApp) {
         this.get('/callback:cbInfo', function () {
             koApp.knockoutForce.oauthCallback(document.location.href);
             location.hash = '/contacts';
-            //this.app.runRoute('get', '/contacts');
         });
 
         this.get('/contacts', function () {
             if (!koApp.knockoutForce.authenticated()) {
                 location.hash = '/login';
-                //this.app.runRoute('get', '/login'); //redirect to login
             } else {
                 koApp.setViewModelByRoute("/contacts");
                 this.render('/partials/contact/list.html').replace('#mainContainer');
@@ -49,7 +45,6 @@ function sammyRoutes(koApp) {
         this.get('/view/:id', function () {
             if (!koApp.knockoutForce.authenticated()) {
                 location.hash = '/login';
-                //this.app.runRoute('get', '/login'); //redirect to login
             } else {
                 koApp.setViewModelByRoute("/view", {id: this.params.id});
                 this.render('/partials/contact/view.html').replace('#mainContainer');
@@ -59,7 +54,6 @@ function sammyRoutes(koApp) {
         this.get('/edit/:id', function () {
             if (!koApp.knockoutForce.authenticated()) {
                 location.hash = '/login';
-                //this.app.runRoute('get', '/login'); //redirect to login
             } else {
                 koApp.setViewModelByRoute("/edit", {id: this.params.id});
                 this.render('/partials/contact/edit.html').replace('#mainContainer');
@@ -69,7 +63,6 @@ function sammyRoutes(koApp) {
         this.get('/new', function () {
             if (!koApp.knockoutForce.authenticated()) {
                 location.hash = '/login';
-                //this.app.runRoute('get', '/login'); //redirect to login
             } else {
                 koApp.setViewModelByRoute("/edit", {});
                 this.render('/partials/contact/edit.html').replace('#mainContainer');
