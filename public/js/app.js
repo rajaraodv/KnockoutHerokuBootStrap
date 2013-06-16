@@ -11,18 +11,17 @@ function ContactsApp(SFconfig) {
         switch (route) {
             case "/login"://fall-through
             case "/":
-               this.currentViewModel = new LoginViewModel();
+                this.currentViewModel = new LoginViewModel();
                 break;
             case "/contacts":
-               this.currentViewModel = new ContactListViewModel();
+                this.currentViewModel = new ContactListViewModel();
                 break;
             case "/view":
-               this.currentViewModel = new ContactViewModel(data);
+                this.currentViewModel = new ContactViewModel(data);
                 break;
             case "/edit":
-               this.currentViewModel = new ContactDetailViewModel(data);
+                this.currentViewModel = new ContactEditViewModel(data);
                 break;
-
         }
         return this.currentViewModel;
     }
@@ -67,9 +66,21 @@ Contact.prototype.getAccount = function () {
 /************************************
  * Create ViewModels for each route
  ***********************************/
-
-function ContactDetailViewModel(data) {
+function AppViewModel() {
     var self = this;
+    self.isAuthenticated = ko.observable(SFConfig.client ? true : false);
+    self.logout = function () {
+        debugger;
+        KnockoutForce.logout(function () {
+            //Now go to logout page
+            location.hash = '/logout';
+        });
+    }
+}
+
+function ContactEditViewModel(data) {
+    var self = this;
+    AppViewModel.call(self);
     self.contact = ko.observable(new Contact({}));
     if (data.id) {
         Contact.get({id: data.id}, function (contact, rawJSON) {
@@ -109,19 +120,21 @@ function ContactDetailViewModel(data) {
     }
 }
 
+
 function LoginViewModel() {
-    // Client-side routes
     var self = this;
+    AppViewModel.call(self);
 
     self.login = function () {
         contactsApp.knockoutForce.login(function () {
-            contactsApp.sammy.runRoute('get', '/contacts');
+            location.hash = '/contacts';
         });
     };
 }
 
 function ContactViewModel(data) {
     var self = this;
+    AppViewModel.call(self);
     self.contact = ko.observable(new Contact({}));
     Contact.get({id: data.id}, function (contact, rawJSON) {
         self.original = contact;
@@ -131,6 +144,8 @@ function ContactViewModel(data) {
 
 function ContactListViewModel() {
     var self = this;
+    AppViewModel.call(self);
+
     self.contacts = ko.observableArray([]);
     this.searchTerm = '';
     this.working = false;
@@ -150,10 +165,6 @@ function ContactListViewModel() {
         });
         //Note: Don't use self.contacts= data.records coz self.contacts is an observableArray
         self.contacts.push.apply(self.contacts, records);
-    };
-
-    this.isWorking = function () {
-        return $scope.working;
     };
 
     this.doSearch = function () {

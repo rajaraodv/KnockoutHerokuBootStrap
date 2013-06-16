@@ -3,6 +3,44 @@
  */
 var SFConfig = getSFConfig();
 
+function initApp(options, forcetkClient) {
+    options = options || {};
+    options.loginUrl = SFConfig.sfLoginURL;
+    options.clientId = SFConfig.consumerKey;
+    options.apiVersion = 'v27.0';
+    options.userAgent = 'SalesforceMobileUI/alpha';
+    options.proxyUrl = options.proxyUrl || SFConfig.proxyUrl;
+
+    //In VF, you should get sessionId and use that as accessToken while initializing forcetk(Force.init)
+    if (SFConfig.sessionId) {
+        options.accessToken = SFConfig.sessionId;
+    }
+
+    //Init force
+    Force.init(options, options.apiVersion, forcetkClient);
+
+    //sforce.connection.init(options.accessToken, options.instanceUrl + '/services/Soap/u/' + options.apiVersion, options.useProxy);
+    if (navigator.smartstore) {
+        SFConfig.dataStore = new Force.StoreCache('sobjects', [
+            {path: 'Name', type: 'string'},
+            {path: 'attributes.type', type: 'string'}
+        ], 'Id');
+
+        SFConfig.dataStore.init();
+    }
+}
+
+mockStore.useSessionStorage();
+
+//Uncomment below and set accessToken(= sessionId), instanceUrl and proxyUrl to test smartstore (mock version - coz real smartstore is part of cordova)
+// inside the browser
+//initApp({
+//    accessToken: '00Di0000000JEm3!AQ4AQLnaKs7PPHaRd0xjvJwJkf6O.9R7ECpU5mndDb1DwYsoxhMDrCyEag.5Ws_HFI5fY.9fYgsQ_4F1D5vXltKmK5b7guCK',
+//    instanceUrl: 'https://na15.salesforce.com',
+//    proxyUrl: 'http://localhost:3000/proxy/'
+//});
+
+
 /**
  *  KnockoutJS doesn't provide "Routes" for single-page apps. This function creates "Routes" for the app using SammyJS
  *  framework (http://sammyjs.org/). SammyJS is completely different from KnockoutJS but only provides "Routes" that could be
@@ -12,7 +50,7 @@ var SFConfig = getSFConfig();
  * @returns {*} a Sammy object
  */
 function sammyRoutes(koApp) {
-    return Sammy(function () {
+    var sammyApp = Sammy(function () {
         this.get('/', function () {
             if (!koApp.knockoutForce.authenticated()) {
                 this.app.runRoute('get', '/login'); //redirect to login
@@ -69,16 +107,28 @@ function sammyRoutes(koApp) {
             }
         });
 
+        this.get('/logout', function () {
+            this.render('/partials/logout.html').replace('#mainContainer');
+        });
 
         //Note: bind to 'changed' event and reapply bindings if mainContainer has changed
         //This is required to essentially wait until new view is swapped before applying bindings.
         this.bind('changed', function () {
-            var mainContainer = document.getElementById('mainContainer');
+            if (!koApp.currentViewModel) {
+                return;
+            }
+            //var mainContainer = document.getElementById('mainContainer');
+            var mainContainer = document.getElementsByTagName('body')[0];
+            ko.cleanNode(document.getElementById('logoutDiv'));
             if (mainContainer && mainContainer.childNodes.length > 0) {
+
                 ko.applyBindings(koApp.currentViewModel, mainContainer);
             }
         });
     });
+
+    sammyApp.debug = true;
+    return sammyApp;
 }
 
 

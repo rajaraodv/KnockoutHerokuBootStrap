@@ -26,7 +26,7 @@
             <button data-bind="click:$parent.save, enable:isValid()"
                     class="btn btn-primary">Save
             </button>
-            <button data-bind="click:$parent.destroy"
+            <button data-bind="visible:Id, click:$parent.destroy"
                     class="btn btn-danger">Delete
             </button>
             <a class="btn btn-primary" href="#/contacts">Cancel</a>

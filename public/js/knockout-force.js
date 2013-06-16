@@ -24,6 +24,8 @@ function KnockoutForce(SFConfig) {
         return SFConfig.client ? true : false;
     };
 
+
+
     this.login = function (callback) {
         if (SFConfig.client) { //already logged in
             return callback && callback();
@@ -104,7 +106,7 @@ function KnockoutForce(SFConfig) {
         ftkClientUI.oauthCallback(callbackString);
     };
 
-    this.logout = function (callback) {
+    KnockoutForce.logout = function (callback) {
         if (SFConfig.client) {
             var ftkClientUI = getForceTKClientUI();
             ftkClientUI.client = SFConfig.client;
@@ -131,6 +133,11 @@ function KnockoutForce(SFConfig) {
                 SFConfig.client.serviceURL = forcetkClient.instanceUrl
                     + '/services/data/'
                     + forcetkClient.apiVersion;
+
+                initApp(null, forcetkClient);
+
+                //Set sessionID to KnockoutForce coz profileImages need them
+                self.sessionId = SFConfig.client.sessionId;
 
                 //If callback is passed, call it
                 callback && callback();
@@ -162,6 +169,13 @@ function KnockoutForceObjectFactory(params, sfConfig) {
     var limit = params.limit;
     var orderBy = params.orderBy;
     var fieldsArray = $.isArray(params.fields) ? params.fields : [];
+
+    var isOnline = function () {
+        return navigator.onLine ||
+            (typeof navigator.connection != 'undefined' &&
+                navigator.connection.type !== Connection.UNKNOWN &&
+                navigator.connection.type !== Connection.NONE);
+    };
 
     var SFConfig = sfConfig;
 
@@ -244,7 +258,36 @@ function KnockoutForceObjectFactory(params, sfConfig) {
     };
 
     KnockoutForceObject.query = function (successCB, failureCB) {
-        return SFConfig.client.query(soql, successCB, failureCB);
+        return KnockoutForceObject.queryWithCustomSOQL(soql, successCB, failureCB);
+    };
+
+    KnockoutForceObject.queryWithCustomSOQL = function (soql, successCB, failureCB) {
+        var self = this;
+        var config = {};
+
+        // fetch list from forcetk and populate SOBject model
+        if (isOnline()) {
+            config.type = 'soql';
+            config.query = soql;
+
+        } else if (navigator.smartstore) {
+            config.type = 'cache';
+            config.cacheQuery = navigator.smartstore.buildExactQuerySpec('attributes.type', type);
+        }
+
+        Force.fetchSObjects(config, SFConfig.dataStore).done(function (resp) {
+            var processFetchResult = function (records) {
+                //Recursively get records until no more records or maxListSize
+                if (resp.hasMore() && (SFConfig.maxListSize || 25) > resp.records.length) {
+                    resp.getMore().done(processFetchResult);
+
+                } else {
+                    return successCB(resp);
+                }
+            }
+            processFetchResult(resp.records);
+
+        }).fail(failureCB);
     };
 
     /*RSC And who doesn't love SOSL*/
@@ -257,41 +300,59 @@ function KnockoutForceObjectFactory(params, sfConfig) {
 
 
     KnockoutForceObject.get = function (params, successCB, failureCB) {
-        return SFConfig.client.retrieve(type, params.id, fieldsArray, function (data) {
-            return successCB(new KnockoutForceObject(data), data);
-        }, failureCB);
+//        return SFConfig.client.retrieve(type, params.id, fieldsArray, function (data) {
+//            return successCB(new KnockoutForceObject(data), data);
+//        }, failureCB);
+        return Force.syncSObject('read', type, params.id, null, fieldsArray, SFConfig.dataStore, isOnline() ? Force.CACHE_MODE.SERVER_FIRST : Force.CACHE_MODE.CACHE_ONLY)
+            .done(function (rawJSON) {
+                return successCB(new KnockoutForceObject(rawJSON), rawJSON);
+            }).fail(failureCB);
     };
 
     KnockoutForceObject.save = function (obj, successCB, failureCB) {
         var data = KnockoutForceObject.getNewObjectData(obj);
-        return SFConfig.client.create(type, data, function (data) {
-            if (data && !$.isArray(data)) {
-                //Salesforce returns "id" in lowercase when an object is
-                //created. Where as it returns id as "Id" for every other call.
-                // This might confuse people, so change "id" to "Id".
-                if (data.id) {
-                    data.Id = data.id;
-                    delete data.id;
-                }
-                return successCB(new KnockoutForceObject(data))
-            }
-            return successCB(data);
-        }, failureCB);
+//        return SFConfig.client.create(type, data, function (data) {
+//            if (data && !$.isArray(data)) {
+//                //Salesforce returns "id" in lowercase when an object is
+//                //created. Where as it returns id as "Id" for every other call.
+//                // This might confuse people, so change "id" to "Id".
+//                if (data.id) {
+//                    data.Id = data.id;
+//                    delete data.id;
+//                }
+//                return successCB(new KnockoutForceObject(data))
+//            }
+//            return successCB(data);
+//        }, failureCB);
+
+        return Force.syncSObject('create', type, null, data, fieldsArray, SFConfig.dataStore, isOnline() ? Force.CACHE_MODE.SERVER_FIRST : Force.CACHE_MODE.CACHE_ONLY)
+            .done(function (data) {
+                return successCB(new KnockoutForceObject(data));
+            }).fail(failureCB);
     };
 
     KnockoutForceObject.update = function (obj, successCB, failureCB) {
-        var data = KnockoutForceObject.getChangedData(obj);
+        var changedData = KnockoutForceObject.getChangedData(obj);
 
-        return SFConfig.client.update(type, obj.Id, data, function (data) {
-            if (data && !$.isArray(data)) {
-                return successCB(new KnockoutForceObject(data))
-            }
-            return successCB(data);
-        }, failureCB);
+//        return SFConfig.client.update(type, obj.Id, data, function (data) {
+//            if (data && !$.isArray(data)) {
+//                return successCB(new KnockoutForceObject(data))
+//            }
+//            return successCB(data);
+//        }, failureCB);
+
+        return Force.syncSObject('update', type, obj.Id, changedData, _.keys(changedData), SFConfig.dataStore, isOnline() ? Force.CACHE_MODE.SERVER_FIRST : Force.CACHE_MODE.CACHE_ONLY)
+            .done(function (data) {
+                return successCB(new KnockoutForceObject(data));
+            }).fail(failureCB);
     };
 
     KnockoutForceObject.remove = function (obj, successCB, failureCB) {
-        return SFConfig.client.del(type, obj.Id, successCB, failureCB);
+       // return SFConfig.client.del(type, obj.Id, successCB, failureCB);
+        return Force.syncSObject('delete', type, obj.Id, null, null, SFConfig.dataStore, isOnline() ? Force.CACHE_MODE.SERVER_FIRST : Force.CACHE_MODE.CACHE_ONLY)
+            .done(function (data) {
+                return successCB(new KnockoutForceObject(data));
+            }).fail(failureCB);
     };
 
     /************************************
