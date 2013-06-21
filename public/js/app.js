@@ -1,3 +1,34 @@
+/************************************
+ * Create a Contact "CLASS" from KnockoutForceObjectFactory by setting SOQL parameters.
+ ***********************************/
+var Contact = (function () {
+    var objDesc = {
+        type: 'Contact',
+        fields: ['FirstName', 'LastName', 'Title', 'Phone', 'Email', 'Id', 'Account.Name'],
+        where: '',
+        orderBy: 'LastName',
+        limit: 20
+    };
+    return KnockoutForceObjectFactory(objDesc, SFConfig);
+})();
+
+//Add any extra functions like validation functions to the Contact CLASS.
+Contact.prototype.isValid = function () {
+    if (!this.LastName() || this.LastName() == "") {
+        return false;
+    }
+    return this.FirstName() != this._orig["FirstName"]
+        || this.LastName() != this._orig["LastName"]
+        || this.Title() != this._orig["Title"]
+        || this.Email() != this._orig["Email"]
+        || this.Phone() != this._orig["Phone"];
+};
+
+Contact.prototype.getAccount = function () {
+    return this.Account && this.Account.Name ? this.Account.Name : '';
+};
+
+
 /*************************************************************
  * Create an "App" class to manage everything and start it
  *************************************************************/
@@ -32,35 +63,6 @@ var contactsApp = new ContactsApp(SFConfig);
 contactsApp.sammy.run();
 
 
-/************************************
- * Create a Contact "CLASS" from KnockoutForceObjectFactory by setting SOQL parameters.
- ***********************************/
-var Contact = (function () {
-    var objDesc = {
-        type: 'Contact',
-        fields: ['FirstName', 'LastName', 'Title', 'Phone', 'Email', 'Id', 'Account.Name'],
-        where: '',
-        orderBy: 'LastName',
-        limit: 20
-    };
-    return KnockoutForceObjectFactory(objDesc, SFConfig);
-})();
-
-//Add any extra functions like validation functions to the Contact CLASS.
-Contact.prototype.isValid = function () {
-    if (!this.LastName() || this.LastName() == "") {
-        return false;
-    }
-    return this.FirstName() != this._orig["FirstName"]
-        || this.LastName() != this._orig["LastName"]
-        || this.Title() != this._orig["Title"]
-        || this.Email() != this._orig["Email"]
-        || this.Phone() != this._orig["Phone"];
-};
-
-Contact.prototype.getAccount = function () {
-    return this.Account && this.Account.Name ? this.Account.Name : '';
-};
 
 
 /************************************
